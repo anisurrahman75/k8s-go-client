@@ -2,28 +2,44 @@ package main
 
 import (
 	"context"
+	"flag"
 	"fmt"
 	apiv1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
+	"k8s.io/client-go/tools/clientcmd"
 )
 
 func main() {
-	config, err := rest.InClusterConfig()
+	kubeconfig := flag.String("kubeconfig", "/home/appscode/.kube/config", "location")
 
+	config, err := clientcmd.BuildConfigFromFlags("", *kubeconfig)
 	if err != nil {
-		panic(err)
+		fmt.Printf("Error %s  on Building config from Flag Outside Cluster", err.Error())
+		config, err = rest.InClusterConfig()
+		if err != nil {
+			fmt.Printf("Error %s On building Config Inside Cluster", err.Error())
+		}
 	}
 	clientset, err := kubernetes.NewForConfig(config)
 	if err != nil {
 		panic(err.Error())
 	}
-	pods, err := clientset.CoreV1().Pods(apiv1.NamespaceDefault).List(context.TODO(), metav1.ListOptions{})
+	watcher, err := clientset.CoreV1().Pods(apiv1.NamespaceDefault).Watch(context.TODO(), metav1.ListOptions{})
 	if err != nil {
 		panic(err.Error())
 	}
-	for _, p := range pods.Items {
-		fmt.Println(p.Name)
+	for event := range watcher.ResultChan() {
+		p := event.Object.(*apiv1.Pod)
+		switch event.Type {
+		case watch.Added:
+			fmt.Printf("Pods %s/%s added\n", p.ObjectMeta.Namespace, p.ObjectMeta.Name)
+		case watch.Modified:
+			fmt.Printf("Pods %s/%s modified\n", p.ObjectMeta.Namespace, p.ObjectMeta.Name)
+		case watch.Deleted:
+			fmt.Printf("Pods %s/%s deleted\n", p.ObjectMeta.Namespace, p.ObjectMeta.Name)
+		}
 	}
 }

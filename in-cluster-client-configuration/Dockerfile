@@ -1,3 +1,3 @@
 FROM debian
-COPY . /app
+COPY ./app /app
 ENTRYPOINT /app

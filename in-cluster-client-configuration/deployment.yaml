@@ -1,0 +1,24 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: my-deploy
+  labels:
+    app: my-deploy
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: my-deploy
+  template:
+    metadata:
+      name: my-deploy
+      labels:
+        app: my-deploy
+    spec:
+      containers:
+        - name: my-deploy
+          image: nginx
+          ports:
+            - containerPort: 8080
+      imagePullSecrets:
+        - name: pull-secret

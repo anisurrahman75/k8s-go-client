@@ -1,0 +1,24 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: in-cluster
+  labels:
+    app: in-cluster
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: in-cluster
+  template:
+    metadata:
+      name: pod
+      labels:
+        app: in-cluster
+    spec:
+      containers:
+      - name: in-cluster
+        image: anisurrahman75/in-cluster:0.0.6
+        ports:
+        - containerPort: 8080
+      imagePullSecrets:
+      - name: pull-secret
